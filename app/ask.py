@@ -13,6 +13,7 @@
 """
 
 import argparse
+import time
 
 from google import genai
 from google.genai import errors, types
@@ -25,6 +26,7 @@ DEFAULT_QUESTION = "AIE2026の講座の宿題にある「3レベル」とは何�
 
 def ask(question: str, temperature: float | None = None) -> str:
     client = genai.Client(api_key=get_api_key())
+    started_at = time.perf_counter()
     if temperature is None:
         response = client.models.generate_content(model=MODEL, contents=question)
     else:
@@ -33,13 +35,15 @@ def ask(question: str, temperature: float | None = None) -> str:
             contents=question,
             config=types.GenerateContentConfig(temperature=temperature),
         )
+    elapsed_seconds = time.perf_counter() - started_at
 
-    print_usage(response)
+    print_metrics(response, elapsed_seconds)
 
     return response.text
 
 
-def print_usage(response) -> None:
+def print_metrics(response, elapsed_seconds: float) -> None:
+    print(f"[time] {elapsed_seconds:.2f}s")
     usage = response.usage_metadata
     if usage is not None:
         print(
@@ -72,9 +76,11 @@ def chat_interactively(temperature: float | None = None) -> None:
         if not question:
             continue
 
+        started_at = time.perf_counter()
         response = chat.send_message(question)
+        elapsed_seconds = time.perf_counter() - started_at
         print(response.text)
-        print_usage(response)
+        print_metrics(response, elapsed_seconds)
 
 
 def main() -> None:

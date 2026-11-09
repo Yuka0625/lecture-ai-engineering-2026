@@ -13,4 +13,6 @@
 - やったこと：基礎では `app/agent.py` の `INSTRUCTIONS` に「確認問題を出すときは、make_quiz が返した答えも問題と一緒に必ず伝える」と追加し、同じ質問で変更前後を `--trace` で比較した。実装では `save_learning_log(content)` を追加し、Pydantic AI の `requires_approval=True` で登録した。CLI で保存内容を表示して利用者に確認し、承認された場合だけ `learning_log/` に Markdown ファイルを保存するようにした。
 - 結果：基礎の比較では、変更前は `make_quiz({'lecture': 2})` の結果から問題だけを提示し、変更後は問題と答えを提示した。ツール名・引数は同じで、どちらも `[usage]` は `requests=2`。実装のテストでは TestModel で承認時に保存されること、拒否時には保存されないことを確認した。
 - 気づき・疑問：`INSTRUCTIONS` の指定でツール呼び出しが同じでも最終回答を変えられる。保存のような副作用のあるツールは、利用者の承認が完了するまで実行しない設計が重要。
+
   
+

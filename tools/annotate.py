@@ -92,6 +92,9 @@ def page_label(cases_path: Path, labels_path: Path) -> None:
 
     with right:
         st.subheader("判定")
+        st.markdown("**評価してほしい点**")
+        for key, name in ALL_CRITERIA:
+            st.markdown(f"- **{name}**：{CRITERION_HELP[key]}")
         st.caption("自分の知識ではなく、参照と基準に照らして判定します。迷ったら「迷った」にチェックして先へ進みます")
         current = labels.get(case["id"], {})
         with st.form(key=f"form-{case['id']}"):

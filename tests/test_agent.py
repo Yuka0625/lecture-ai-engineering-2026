@@ -5,20 +5,29 @@ TestModel は実際のLLMを呼ばない偽モデルで、登録されたツー�
 「ツールが登録され、呼ばれ、結果がモデルに戻るか」を確かめられる。
 """
 
+import json
+
 from pydantic_ai import DeferredToolRequests
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from pydantic_ai.models.test import TestModel
 
 from app.agent import agent, confirm_deferred_tools
 
+
+BASE_TOOLS = {"search_materials"}
 BASE_TOOLS = {"search_glossary", "get_lecture_summary", "make_quiz"}
 ALL_TOOLS = BASE_TOOLS | {"save_learning_log"}
+
 
 
 def _parts(result, kind):
     return [p for m in result.all_messages() for p in m.parts if isinstance(p, kind)]
 
 
+
+def test_base_tools_are_registered_and_called(monkeypatch):
+    monkeypatch.setattr("app.retrieval.search", lambda *args, **kwargs: [])
+    model = TestModel()
 def test_base_tools_are_registered_and_called():
     model = TestModel(call_tools=sorted(BASE_TOOLS))
     with agent.override(model=model):
@@ -35,11 +44,16 @@ def test_base_tools_are_registered_and_called():
     assert result.output
 
 
-def test_glossary_result_reaches_the_model():
-    model = TestModel(call_tools=["search_glossary"])
+def test_material_result_reaches_the_model(monkeypatch):
+    hit = {"page_id": "lec02-main-p052", "lecture": 2, "page": 52, "content": "元の重みは固定"}
+    monkeypatch.setattr("app.retrieval.search", lambda *args, **kwargs: [hit])
+    model = TestModel(call_tools=["search_materials"])
     with agent.override(model=model):
         result = agent.run_sync("RAGとは？")
     returns = _parts(result, ToolReturnPart)
+
+    assert returns and returns[0].tool_name == "search_materials"
+    assert json.loads(returns[0].content)["results"] == [hit]
     assert returns and returns[0].tool_name == "search_glossary"
 
 
@@ -87,3 +101,4 @@ def test_learning_log_is_not_saved_when_testmodel_approval_is_denied(monkeypatch
 
     assert isinstance(result.output, str)
     assert not tools.LEARNING_LOG_DIR.exists()
+
